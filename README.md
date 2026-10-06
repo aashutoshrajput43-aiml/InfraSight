@@ -8,7 +8,6 @@
 [![Ultralytics](https://img.shields.io/badge/YOLOv8n-Hybrid_Vision-00FFFF.svg)](https://ultralytics.com)
 
 **InfraSight** is an enterprise-grade AI public infrastructure monitoring system engineered for **Indore Municipal Corporation (IMC)**. It automatically **detects**, **classifies**, **deduplicates**, **prioritizes**, and **tracks** municipal defects (potholes, damaged roads, broken streetlights, overflowing drains, and garbage) across Indore's major transit corridors and commercial wards.
-
 ---
 
 ## 🏛️ Project Architecture & Features
