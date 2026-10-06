@@ -11,8 +11,28 @@ export default function AdminIssues() {
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [complaintSent, setComplaintSent] = useState(false);
 
-  // Curated, distinct 5 core issues with sensible authentic Indian infrastructure photos
+  // Curated, distinct 8 core issues with sensible authentic Indian infrastructure photos
   const issues = [
+    {
+      id: "IS-0095",
+      type: "traffic_signal",
+      categoryName: "Traffic signal malfunction",
+      area: "Rajwada",
+      address: "Rajwada Chowk main intersection",
+      priority_score: 95,
+      priority_level: "Critical",
+      status: "Open",
+      age: "1 d",
+      report_count: 17,
+      latitude: 22.7186,
+      longitude: 75.8540,
+      photo: "/traffic_signal.jpg",
+      boxLabel: "Broken traffic signal · 97%",
+      boxPos: { left: "38%", top: "12%", width: "20%", height: "65%" },
+      hazard: "Uncontrolled intersection at Rajwada Chowk causing heavy congestion and pedestrian risk",
+      department: "Traffic & Electrical Cell",
+      complaintRef: "IMC-2026-11492",
+    },
     {
       id: "IS-0092",
       type: "pothole",
@@ -32,6 +52,46 @@ export default function AdminIssues() {
       hazard: "Broken streetlight SL-2214 - dark since Sep 28, 18 m from this pothole",
       department: "Roads Department",
       complaintRef: "IMC-2026-11458",
+    },
+    {
+      id: "IS-0090",
+      type: "open_manhole",
+      categoryName: "Uncovered sewer manhole",
+      area: "Patnipura",
+      address: "Patnipura Main Bazaar, near Sharma Kirana",
+      priority_score: 90,
+      priority_level: "Critical",
+      status: "Open",
+      age: "1 d",
+      report_count: 14,
+      latitude: 22.7380,
+      longitude: 75.8750,
+      photo: "/manhole.jpg",
+      boxLabel: "Open manhole hazard · 96%",
+      boxPos: { left: "34%", top: "58%", width: "32%", height: "26%" },
+      hazard: "Deep open chamber with branch warning marker in middle of two-wheeler lane",
+      department: "Sewerage & Drainage Dept",
+      complaintRef: "IMC-2026-11477",
+    },
+    {
+      id: "IS-0089",
+      type: "water_pipeline",
+      categoryName: "Burst water pipeline",
+      area: "Bhawarkua",
+      address: "Near University Road & Sai Kirana Market",
+      priority_score: 89,
+      priority_level: "High",
+      status: "In progress",
+      age: "2 d",
+      report_count: 11,
+      latitude: 22.6926,
+      longitude: 75.8676,
+      photo: "/pipeline.jpg",
+      boxLabel: "Pipeline burst · 93%",
+      boxPos: { left: "48%", top: "40%", width: "26%", height: "25%" },
+      hazard: "Pressurized drinking water gushing onto commercial road; asphalt erosion observed",
+      department: "Indore Water Supply Wing",
+      complaintRef: "IMC-2026-11463",
     },
     {
       id: "IS-0087",
@@ -195,6 +255,9 @@ export default function AdminIssues() {
             <option value="drain">Drainage</option>
             <option value="garbage">Garbage</option>
             <option value="footpath">Footpath</option>
+            <option value="Traffic">Traffic signal</option>
+            <option value="pipeline">Water pipeline</option>
+            <option value="manhole">Open manhole</option>
           </select>
         </div>
 
@@ -228,6 +291,9 @@ export default function AdminIssues() {
             <option value="Palasia">Palasia</option>
             <option value="Rajwada">Rajwada</option>
             <option value="Sarafa">Sarafa</option>
+            <option value="New Palasia">New Palasia</option>
+            <option value="Bhawarkua">Bhawarkua</option>
+            <option value="Patnipura">Patnipura</option>
           </select>
         </div>
 

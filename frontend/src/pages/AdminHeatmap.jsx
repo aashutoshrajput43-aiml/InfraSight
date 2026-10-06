@@ -53,11 +53,13 @@ export default function AdminHeatmap() {
   ];
 
   const mapPoints = [
+    { lat: 22.7186, lng: 75.8540, weight: 0.98, score: 95, area: "Rajwada", type: "Traffic signal" },
     { lat: 22.7533, lng: 75.8937, weight: 0.96, score: 92, area: "Vijay Nagar", type: "Pothole" },
+    { lat: 22.7380, lng: 75.8750, weight: 0.91, score: 90, area: "Patnipura", type: "Open manhole" },
+    { lat: 22.6926, lng: 75.8676, weight: 0.88, score: 89, area: "Bhawarkua", type: "Water supply" },
     { lat: 22.7210, lng: 75.8830, weight: 0.82, score: 78, area: "Palasia", type: "Streetlight" },
     { lat: 22.7179, lng: 75.8543, weight: 0.70, score: 64, area: "Rajwada", type: "Drainage" },
-    { lat: 22.6920, lng: 75.8650, weight: 0.55, score: 51, area: "Bhawarkua", type: "Waste" },
-    { lat: 22.7170, lng: 75.8530, weight: 0.42, score: 38, area: "Sarafa", type: "Water supply" },
+    { lat: 22.7170, lng: 75.8530, weight: 0.42, score: 38, area: "Sarafa", type: "Waste" },
     { lat: 22.6360, lng: 75.8060, weight: 0.35, score: 32, area: "Rau", type: "Pothole" },
   ];
 

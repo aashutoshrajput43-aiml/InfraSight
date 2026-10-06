@@ -7,6 +7,19 @@ export default function CitizenReports() {
 
   const reports = [
     {
+      id: "IS-0095",
+      title: "Traffic signal malfunction at crossroad",
+      category: "Traffic & Signals",
+      location: "Rajwada Chowk main intersection",
+      reported: "Oct 6, 8:15 AM",
+      updated: "30 mins ago",
+      priority: "Critical",
+      status: "Reported",
+      step: 1,
+      badgeColor: "bg-red-50 text-red-800 border-red-200",
+      photo: "/traffic_signal.jpg",
+    },
+    {
       id: "IS-0092",
       title: "Pothole on main carriageway",
       category: "Road & Potholes",
@@ -18,6 +31,19 @@ export default function CitizenReports() {
       step: 3,
       badgeColor: "bg-teal-50 text-teal-800 border-teal-200",
       photo: "/pothole.jpg",
+    },
+    {
+      id: "IS-0089",
+      title: "Pipeline burst & water flooding road",
+      category: "Water Supply",
+      location: "Bhawarkua, near University Road",
+      reported: "Oct 5, 2:30 PM",
+      updated: "Crew dispatched 1 hr ago",
+      priority: "High",
+      status: "In Progress",
+      step: 3,
+      badgeColor: "bg-teal-50 text-teal-800 border-teal-200",
+      photo: "/pipeline.jpg",
     },
     {
       id: "IS-0087",

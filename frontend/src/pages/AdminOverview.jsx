@@ -26,7 +26,8 @@ export default function AdminOverview() {
     { name: "Streetlight", count: 18, fill: "#eab308" },
     { name: "Drainage", count: 16, fill: "#0891b2" },
     { name: "Garbage", count: 12, fill: "#16a34a" },
-    { name: "Road damage", count: 9, fill: "#6366f1" },
+    { name: "Traffic signal", count: 10, fill: "#ef4444" },
+    { name: "Water supply", count: 8, fill: "#06b6d4" },
   ];
 
   const trendData = [
@@ -42,6 +43,17 @@ export default function AdminOverview() {
   const topQueue = [
     {
       rank: 1,
+      id: "IS-0095",
+      title: "Broken traffic signal, collision risk",
+      meta: "#IS-0095 · merged 17 reports",
+      area: "Rajwada Chowk",
+      reports: 17,
+      priority: "Critical",
+      prioColor: "bg-red-50 text-red-700 border-red-200",
+      photo: "/traffic_signal.jpg",
+    },
+    {
+      rank: 2,
       id: "IS-0092",
       title: "Deep pothole, lane collapse risk",
       meta: "#IS-0092 · merged 13 reports",
@@ -52,7 +64,29 @@ export default function AdminOverview() {
       photo: "/pothole.jpg",
     },
     {
-      rank: 2,
+      rank: 3,
+      id: "IS-0090",
+      title: "Uncovered sewer manhole chamber",
+      meta: "#IS-0090 · merged 14 reports",
+      area: "Patnipura Bazaar",
+      reports: 14,
+      priority: "Critical",
+      prioColor: "bg-red-50 text-red-700 border-red-200",
+      photo: "/manhole.jpg",
+    },
+    {
+      rank: 4,
+      id: "IS-0089",
+      title: "Burst water supply main pipeline",
+      meta: "#IS-0089 · merged 11 reports",
+      area: "Bhawarkua",
+      reports: 11,
+      priority: "High",
+      prioColor: "bg-orange-50 text-orange-700 border-orange-200",
+      photo: "/pipeline.jpg",
+    },
+    {
+      rank: 5,
       id: "IS-0087",
       title: "Broken streetlight cluster",
       meta: "#IS-0087 · merged 9 reports",
@@ -63,7 +97,7 @@ export default function AdminOverview() {
       photo: "/streetlight.jpg",
     },
     {
-      rank: 3,
+      rank: 6,
       id: "IS-0081",
       title: "Overflowing drain, waterlogging",
       meta: "#IS-0081 · merged 7 reports",
@@ -72,28 +106,6 @@ export default function AdminOverview() {
       priority: "High",
       prioColor: "bg-amber-50 text-amber-700 border-amber-200",
       photo: "/drain.jpg",
-    },
-    {
-      rank: 4,
-      id: "IS-0076",
-      title: "Overflowing garbage dump",
-      meta: "#IS-0076 · merged 8 reports",
-      area: "Sarafa",
-      reports: 8,
-      priority: "Medium",
-      prioColor: "bg-amber-50 text-amber-700 border-amber-200",
-      photo: "/garbage.jpg",
-    },
-    {
-      rank: 5,
-      id: "IS-0061",
-      title: "Damaged footpath slab",
-      meta: "#IS-0061 · merged 4 reports",
-      area: "New Palasia",
-      reports: 4,
-      priority: "Medium",
-      prioColor: "bg-slate-100 text-slate-700 border-slate-200",
-      photo: "/footpath.jpg",
     },
   ];
 

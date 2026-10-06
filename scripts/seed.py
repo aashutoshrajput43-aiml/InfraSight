@@ -176,6 +176,42 @@ def seed_database():
             "score": 61.0,
             "reason": "Extensive asphalt cracking and subsidence near student transit hub."
         },
+        {
+            "type": "traffic_signal",
+            "lat": 22.7186, "lng": 75.8540,
+            "area": "Rajwada",
+            "address": "Rajwada Chowk main intersection",
+            "severity": 0.85,
+            "report_count": 17,
+            "status": "Reported",
+            "created_days_ago": 1,
+            "score": 95.0,
+            "reason": "Broken traffic signal at high-density commercial crossroads; uncontrolled pedestrian conflict zone."
+        },
+        {
+            "type": "open_manhole",
+            "lat": 22.7380, "lng": 75.8750,
+            "area": "Patnipura",
+            "address": "Patnipura Main Bazaar, near Sharma Kirana",
+            "severity": 0.80,
+            "report_count": 14,
+            "status": "Reported",
+            "created_days_ago": 1,
+            "score": 90.0,
+            "reason": "Uncovered sewer chamber in middle of two-wheeler lane; branch warning marker installed by locals."
+        },
+        {
+            "type": "water_pipeline",
+            "lat": 22.6926, "lng": 75.8676,
+            "area": "Bhawarkua",
+            "address": "Near University Road & Sai Kirana Market",
+            "severity": 0.70,
+            "report_count": 11,
+            "status": "In Progress",
+            "created_days_ago": 2,
+            "score": 89.0,
+            "reason": "Pressurized water main pipeline burst gushing water onto road and eroding pavement foundation."
+        },
     ]
 
     for item in anchor_issues:
