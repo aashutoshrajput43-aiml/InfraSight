@@ -3,12 +3,15 @@ const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 // Helper for HTTP requests
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
+  const defaultRole = typeof window !== "undefined" && window.location.pathname.startsWith("/admin") ? "admin" : "citizen";
+  const activeRole = options.headers?.["X-User-Role"] || localStorage.getItem("infrasight_role") || defaultRole;
+
   try {
     const res = await fetch(url, {
       ...options,
       headers: {
+        "X-User-Role": activeRole,
         ...(options.headers || {}),
-        "X-User-Role": localStorage.getItem("infrasight_role") || "citizen",
       },
     });
 
