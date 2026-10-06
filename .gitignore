@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+backend/venv/
+backend/.venv/
+env/
+.env
+
+# Build outputs
+frontend/dist/
+frontend/dist-ssr/
+*.local
+
+# Python cache & logs
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Databases & local sqlite
+infrasight.db
+*.sqlite3
+backend/uploads/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
