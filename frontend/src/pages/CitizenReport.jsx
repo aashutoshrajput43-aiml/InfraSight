@@ -101,6 +101,7 @@ export default function CitizenReport() {
   const [isScanning, setIsScanning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBoxes, setShowBoxes] = useState(true);
+  const [draftSaved, setDraftSaved] = useState(false);
 
   const handleSelectCategory = (cat) => {
     setCategory(cat);
@@ -137,8 +138,11 @@ export default function CitizenReport() {
   };
 
   const handleUseSample = () => {
-    setPreviewUrl(defaultPhoto);
-    setFileName("IMG_2431.jpg · Vijay Nagar · 2.4 MB");
+    const media = categoryMedia[category] || categoryMedia.Pothole;
+    setFile(null);
+    setPreviewUrl(media.photo);
+    setFileName(media.fileName);
+    setDescription(media.desc);
     setIsScanning(true);
     setTimeout(() => {
       setIsScanning(false);
@@ -163,6 +167,7 @@ export default function CitizenReport() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
@@ -170,27 +175,42 @@ export default function CitizenReport() {
       if (file) {
         formData.append("image", file);
       } else {
-        const blob = new Blob(["sample"], { type: "image/jpeg" });
-        formData.append("image", blob, "IMG_2431.jpg");
+        try {
+          const resp = await fetch(previewUrl || "/pothole.jpg");
+          const blob = await resp.blob();
+          formData.append("image", blob, fileName?.split(" ")?.[0] || "captured_evidence.jpg");
+        } catch {
+          const blob = new Blob(["sample"], { type: "image/jpeg" });
+          formData.append("image", blob, "captured_evidence.jpg");
+        }
       }
 
       formData.append("latitude", lat.toString());
       formData.append("longitude", lng.toString());
       formData.append("category", category);
-      formData.append("area", "Vijay Nagar");
+      formData.append("area", ward.split("·")?.[1]?.trim() || "Vijay Nagar");
       formData.append("address", "AB Road near Vijay Nagar Square");
-      formData.append("description", description);
+      formData.append("description", description || "");
 
       const result = await api.createReport(formData);
-      navigate(`/report/success/${result.id || "IS-0092"}`, { state: { issue: result } });
+      navigate(`/report/success/${result.id || "IS-0092"}`, {
+        state: {
+          issue: {
+            ...result,
+            category: category,
+            area: ward.split("·")?.[1]?.trim() || result?.area || "Vijay Nagar",
+          },
+        },
+      });
     } catch (err) {
       console.warn("Backend report creation fallback to local simulated case:", err);
       // Fallback with simulated high quality payload
       const mockResult = {
         id: "IS-0092",
+        type: category.toLowerCase().replace(/ /g, "_"),
         category: category,
-        title: description.slice(0, 50),
-        area: "Vijay Nagar",
+        title: (description || "").slice(0, 50),
+        area: ward.split("·")?.[1]?.trim() || "Vijay Nagar",
         address: "AB Road near Vijay Nagar Square, Scheme No. 78",
         priority_score: 82,
         priority_level: "High",
@@ -496,29 +516,42 @@ export default function CitizenReport() {
                 />
               </div>
 
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100">
-                <span className="text-[11px] text-slate-500 font-medium">
-                  Draft ready: photo, GPS and category attached
-                </span>
+              <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Draft ready: photo, GPS and category attached
+                  </span>
+                  {draftSaved && (
+                    <span className="text-[11px] text-emerald-600 font-bold animate-fadeIn">
+                      ✓ Draft saved!
+                    </span>
+                  )}
+                </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
                   <button
+                    id="save-draft-btn"
                     type="button"
-                    onClick={() => alert("Draft saved locally.")}
-                    className="flex-1 sm:flex-initial px-4 py-2.5 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-50 transition-all"
+                    onClick={() => {
+                      setDraftSaved(true);
+                      setTimeout(() => setDraftSaved(false), 3000);
+                    }}
+                    className="flex-1 sm:flex-initial min-h-[44px] px-4 py-2.5 border border-slate-200 text-slate-700 hover:text-slate-900 text-xs font-bold rounded-xl hover:bg-slate-50 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    Save draft
+                    <i className="far fa-bookmark text-xs" />
+                    <span>Save draft</span>
                   </button>
 
                   <button
+                    id="submit-report-btn"
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 sm:flex-initial px-5 py-2.5 bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2"
+                    className="flex-1 sm:flex-initial min-h-[44px] px-6 py-2.5 bg-cyan-700 hover:bg-cyan-800 active:bg-cyan-900 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold rounded-xl shadow-md hover:shadow-lg active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     {isSubmitting ? (
                       <>
-                        <i className="fas fa-spinner fa-spin text-xs" />
-                        <span>Submitting...</span>
+                        <i className="fas fa-spinner fa-spin text-sm" />
+                        <span>Submitting to IMC...</span>
                       </>
                     ) : (
                       <>

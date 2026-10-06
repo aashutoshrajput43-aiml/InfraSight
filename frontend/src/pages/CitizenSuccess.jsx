@@ -6,14 +6,20 @@ export default function CitizenSuccess() {
   const { id } = useParams();
   const location = useLocation();
 
-  const issue = location.state?.issue || {
-    id: id || "IS-0092",
-    category: "Pothole",
-    area: "Vijay Nagar",
-    address: "Vijay Nagar Main Road, near Scheme No. 78 junction",
-    priority_score: 82,
-    priority_level: "High",
-    report_count: 13,
+  const rawIssue = location.state?.issue || {};
+  const categoryRaw = rawIssue.category || rawIssue.type || "Pothole";
+  const categoryName = categoryRaw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const categoryLower = categoryName.toLowerCase();
+
+  const issue = {
+    id: rawIssue.id || id || "IS-0092",
+    category: categoryName,
+    categoryLower: categoryLower,
+    area: rawIssue.area || "Vijay Nagar",
+    address: rawIssue.address || "Vijay Nagar Main Road, near Scheme No. 78 junction",
+    priority_score: Math.round(rawIssue.priority_score || 82),
+    priority_level: rawIssue.priority_level || (rawIssue.priority_score >= 80 ? "Critical" : rawIssue.priority_score >= 65 ? "High" : "Medium"),
+    report_count: rawIssue.report_count || 13,
   };
 
   const refCode = issue.id || "IS-0092";
@@ -48,7 +54,7 @@ export default function CitizenSuccess() {
             {refCode}
           </div>
           <div className="text-[11px] text-slate-500 font-medium mt-1">
-            {issue.area} {issue.category.toLowerCase()}
+            {issue.area} · {issue.category}
           </div>
         </div>
 
@@ -88,7 +94,7 @@ export default function CitizenSuccess() {
             </h1>
 
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl">
-              The {issue.category.toLowerCase()} you flagged on {issue.address || "Vijay Nagar Main Road, near Scheme No. 78 junction"} is now in the Indore Municipal Corporation queue.
+              The {issue.categoryLower} you flagged on {issue.address} is now in the Indore Municipal Corporation queue.
             </p>
 
             {/* Reference ID Pill */}
