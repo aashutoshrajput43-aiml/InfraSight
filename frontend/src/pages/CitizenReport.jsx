@@ -132,9 +132,24 @@ export default function CitizenReport() {
     setFileName(`${selected.name} · ${(selected.size / (1024 * 1024)).toFixed(1)} MB`);
     setIsScanning(true);
 
-    setTimeout(() => {
-      setIsScanning(false);
-    }, 1500);
+    // Call real-time AI scan endpoint
+    api.scanPhoto(selected)
+      .then((scanRes) => {
+        if (scanRes?.detections?.length > 0) {
+          const topClass = scanRes.detections[0].class;
+          if (topClass.includes("pothole")) setCategory("Pothole");
+          else if (topClass.includes("streetlight")) setCategory("Streetlight");
+          else if (topClass.includes("drain")) setCategory("Drainage");
+          else if (topClass.includes("garbage")) setCategory("Garbage");
+          else if (topClass.includes("road")) setCategory("Other");
+        }
+      })
+      .catch((err) => {
+        console.warn("Real-time scan preview fallback:", err);
+      })
+      .finally(() => {
+        setTimeout(() => setIsScanning(false), 800);
+      });
   };
 
   const handleUseSample = () => {
@@ -146,7 +161,7 @@ export default function CitizenReport() {
     setIsScanning(true);
     setTimeout(() => {
       setIsScanning(false);
-    }, 1200);
+    }, 800);
   };
 
   const handleGPSDetect = () => {
@@ -193,6 +208,18 @@ export default function CitizenReport() {
       formData.append("description", description || "");
 
       const result = await api.createReport(formData);
+
+      // Save issue ID to local storage so My Reports page shows it immediately
+      try {
+        const stored = JSON.parse(localStorage.getItem("infrasight_my_reports") || "[]");
+        if (result?.id && !stored.includes(result.id)) {
+          stored.unshift(result.id);
+          localStorage.setItem("infrasight_my_reports", JSON.stringify(stored));
+        }
+      } catch (err) {
+        console.warn("Storage save failed:", err);
+      }
+
       navigate(`/report/success/${result.id || "IS-0092"}`, {
         state: {
           issue: {

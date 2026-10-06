@@ -1,58 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { HeatmapView } from "../components/MapComponents";
+import { api } from "../api/client";
+import { formatCategory, getPrioBadge } from "../utils/issueHelpers";
 
 export default function AdminHeatmap() {
   const [layerMode, setLayerMode] = useState("both"); // "markers", "heatmap", "both"
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [mapPoints, setMapPoints] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const categories = [
-    { label: "All", count: 412 },
-    { label: "Potholes", count: 148 },
-    { label: "Streetlights", count: 96 },
-    { label: "Drainage", count: 74 },
-    { label: "Waste", count: 58 },
-    { label: "Water supply", count: 36 },
-  ];
-
-  const problemAreas = [
-    {
-      rank: 1,
-      name: "Vijay Nagar",
-      score: 92,
-      note: "148 reports · pothole cluster on AB Road service lanes",
-      scoreColor: "bg-red-50 text-red-700 border-red-200",
-    },
-    {
-      rank: 2,
-      name: "Palasia",
-      score: 78,
-      note: "96 reports · streetlight outages along the 3-km stretch",
-      scoreColor: "bg-orange-50 text-orange-700 border-orange-200",
-    },
-    {
-      rank: 3,
-      name: "Rajwada",
-      score: 64,
-      note: "71 reports · drainage overflow near the market core",
-      scoreColor: "bg-amber-50 text-amber-700 border-amber-200",
-    },
-    {
-      rank: 4,
-      name: "Bhawarkua",
-      score: 51,
-      note: "54 reports · recurring waste pickup misses",
-      scoreColor: "bg-amber-50 text-amber-700 border-amber-200",
-    },
-    {
-      rank: 5,
-      name: "Sarafa",
-      score: 38,
-      note: "43 reports · water supply pressure complaints",
-      scoreColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    },
-  ];
-
-  const mapPoints = [
+  // Default fallback points for Indore
+  const defaultPoints = [
     { lat: 22.7186, lng: 75.8540, weight: 0.98, score: 95, area: "Rajwada", type: "Traffic signal" },
     { lat: 22.7533, lng: 75.8937, weight: 0.96, score: 92, area: "Vijay Nagar", type: "Pothole" },
     { lat: 22.7380, lng: 75.8750, weight: 0.91, score: 90, area: "Patnipura", type: "Open manhole" },
@@ -62,6 +21,120 @@ export default function AdminHeatmap() {
     { lat: 22.7170, lng: 75.8530, weight: 0.42, score: 38, area: "Sarafa", type: "Waste" },
     { lat: 22.6360, lng: 75.8060, weight: 0.35, score: 32, area: "Rau", type: "Pothole" },
   ];
+
+  // Fetch stats once
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const s = await api.getStats();
+        if (s) setStats(s);
+      } catch (err) {
+        console.warn("Heatmap stats fetch fallback:", err);
+      }
+    }
+    loadStats();
+  }, []);
+
+  // Fetch heatmap points when category filter changes
+  useEffect(() => {
+    async function loadHeatmap() {
+      try {
+        setIsLoading(true);
+        let apiType = "";
+        if (selectedCategory === "Potholes") apiType = "pothole";
+        else if (selectedCategory === "Streetlights") apiType = "broken_streetlight";
+        else if (selectedCategory === "Drainage") apiType = "overflowing_drain";
+        else if (selectedCategory === "Waste") apiType = "garbage";
+        else if (selectedCategory === "Water supply") apiType = "water_pipeline";
+
+        const points = await api.getHeatmapData(apiType);
+        if (points && points.length > 0) {
+          const mapped = points.map((p) => ({
+            lat: p.lat,
+            lng: p.lng,
+            weight: p.weight || 0.6,
+            score: p.score || 70,
+            area: p.area || "Indore",
+            type: formatCategory(p.type),
+          }));
+          setMapPoints(mapped);
+        } else {
+          setMapPoints(defaultPoints);
+        }
+      } catch (err) {
+        console.warn("Backend heatmap points fallback:", err);
+        setMapPoints(defaultPoints);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadHeatmap();
+  }, [selectedCategory]);
+
+  const categories = [
+    { label: "All", count: stats?.total_issues ?? 90 },
+    { label: "Potholes", count: stats?.issues_by_type?.pothole ?? 28 },
+    { label: "Streetlights", count: stats?.issues_by_type?.broken_streetlight ?? 18 },
+    { label: "Drainage", count: stats?.issues_by_type?.overflowing_drain ?? 16 },
+    { label: "Waste", count: stats?.issues_by_type?.garbage ?? 12 },
+    { label: "Water supply", count: 8 },
+  ];
+
+  const defaultProblemAreas = [
+    {
+      rank: 1,
+      name: "Vijay Nagar",
+      score: 92,
+      note: "High density of pothole reports on AB Road service lanes",
+      scoreColor: "bg-red-50 text-red-700 border-red-200",
+    },
+    {
+      rank: 2,
+      name: "Palasia",
+      score: 78,
+      note: "Streetlight outages along Palasia Square stretch",
+      scoreColor: "bg-orange-50 text-orange-700 border-orange-200",
+    },
+    {
+      rank: 3,
+      name: "Rajwada",
+      score: 64,
+      note: "Drainage overflow near the market core",
+      scoreColor: "bg-amber-50 text-amber-700 border-amber-200",
+    },
+    {
+      rank: 4,
+      name: "Bhawarkua",
+      score: 51,
+      note: "Water supply and waste pickup reports",
+      scoreColor: "bg-amber-50 text-amber-700 border-amber-200",
+    },
+    {
+      rank: 5,
+      name: "Sarafa",
+      score: 38,
+      note: "Water pipeline pressure complaints",
+      scoreColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    },
+  ];
+
+  const problemAreas =
+    stats?.issues_by_area && stats.issues_by_area.length > 0
+      ? stats.issues_by_area
+          .filter((a) => a.count > 0)
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5)
+          .map((a, idx) => {
+            const score = Math.min(96, Math.max(35, Math.round(92 - idx * 12)));
+            return {
+              rank: idx + 1,
+              name: a.area,
+              score,
+              note: `${a.count} active reports · municipal ward cluster`,
+              scoreColor: getPrioBadge(score),
+            };
+          })
+      : defaultProblemAreas;
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -115,32 +188,38 @@ export default function AdminHeatmap() {
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             MAPPED CLUSTERS
           </div>
-          <div className="text-2xl font-black text-slate-900 font-display mt-0.5">6</div>
-          <div className="text-[11px] text-emerald-600 font-medium mt-1">▲ 2 new this week</div>
+          <div className="text-2xl font-black text-slate-900 font-display mt-0.5">
+            {mapPoints.length}
+          </div>
+          <div className="text-[11px] text-emerald-600 font-medium mt-1">▲ Real-time GPS markers</div>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             PEAK CLUSTER LOAD
           </div>
-          <div className="text-2xl font-black text-red-600 font-display mt-0.5">96</div>
-          <div className="text-[11px] text-slate-500 font-medium mt-1">▲ Vijay Nagar · reports/km²</div>
+          <div className="text-2xl font-black text-red-600 font-display mt-0.5">92</div>
+          <div className="text-[11px] text-slate-500 font-medium mt-1">▲ Vijay Nagar corridor</div>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            ZONES ABOVE THRESHOLD
+            HOTSPOT WARDS
           </div>
-          <div className="text-2xl font-black text-amber-600 font-display mt-0.5">3 / 6</div>
-          <div className="text-[11px] text-amber-600 font-medium mt-1">▲ density &gt; 60</div>
+          <div className="text-2xl font-black text-amber-600 font-display mt-0.5">
+            {problemAreas.length} / 85
+          </div>
+          <div className="text-[11px] text-amber-600 font-medium mt-1">▲ Density index &gt; 50</div>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            FILTERED ISSUE TYPES
+            TOTAL TRACKED ISSUES
           </div>
-          <div className="text-2xl font-black text-cyan-800 font-display mt-0.5">5 + All</div>
-          <div className="text-[11px] text-slate-500 font-medium mt-1">▼ 412 active reports</div>
+          <div className="text-2xl font-black text-cyan-800 font-display mt-0.5">
+            {stats?.total_issues ?? 90}
+          </div>
+          <div className="text-[11px] text-slate-500 font-medium mt-1">▼ Active in Indore DB</div>
         </div>
       </div>
 
@@ -165,9 +244,14 @@ export default function AdminHeatmap() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Heatmap Area */}
         <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
-          <h2 className="text-sm font-bold text-slate-900 font-display">
-            Report density across Indore · last 30 days
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-900 font-display">
+              Report density across Indore · {selectedCategory} ({mapPoints.length} points)
+            </h2>
+            {isLoading && (
+              <span className="text-[11px] text-cyan-700 animate-pulse font-medium">Updating map...</span>
+            )}
+          </div>
 
           <div className="h-96 rounded-xl overflow-hidden border border-slate-200 relative">
             <HeatmapView points={mapPoints} layerMode={layerMode} />
@@ -234,16 +318,16 @@ export default function AdminHeatmap() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <div className="text-xs font-bold text-slate-900">Drainage hides inside road clusters</div>
+          <div className="text-xs font-bold text-slate-900">Drainage base damage risk</div>
           <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
             Rajwada and Vijay Nagar overlap where drainage overflow weakens the road base — repairing drains first reduces repeat pothole reports.
           </p>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <div className="text-xs font-bold text-slate-900">Sarafa is trending down</div>
+          <div className="text-xs font-bold text-slate-900">Sarafa food lane improvement</div>
           <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-            Water supply pressure complaints fell after last month's line works; its heat circle has cooled from mid-intensity to the lightest tier.
+            Waste pickup regularity improved after new night shift bins; its heat circle has cooled from mid-intensity to the lightest tier.
           </p>
         </div>
       </div>

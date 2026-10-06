@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 // Helper for HTTP requests
 async function request(endpoint, options = {}) {
@@ -52,6 +52,16 @@ export const api = {
   // 4. Create new report (multipart)
   async createReport(formData) {
     return await request("/reports", {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  // 4b. On-demand AI image scan
+  async scanPhoto(file) {
+    const formData = new FormData();
+    formData.append("image", file);
+    return await request("/reports/scan", {
       method: "POST",
       body: formData,
     });

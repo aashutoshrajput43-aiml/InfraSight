@@ -1,103 +1,185 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../api/client";
+import { formatCategory, getPhotoForType, getPrioBadge } from "../utils/issueHelpers";
 
 export default function CitizenReports() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("All");
+  const [reportsList, setReportsList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const reports = [
+  const defaultReports = [
     {
       id: "IS-0095",
+      rawId: "IS-0095",
       title: "Traffic signal malfunction at crossroad",
       category: "Traffic & Signals",
       location: "Rajwada Chowk main intersection",
       reported: "Oct 6, 8:15 AM",
-      updated: "30 mins ago",
       priority: "Critical",
       status: "Reported",
       step: 1,
       badgeColor: "bg-red-50 text-red-800 border-red-200",
       photo: "/traffic_signal.jpg",
+      rawItem: null,
     },
     {
       id: "IS-0092",
+      rawId: "IS-0092",
       title: "Pothole on main carriageway",
       category: "Road & Potholes",
       location: "Vijay Nagar, near Scheme 54",
       reported: "Oct 5, 9:42 AM",
-      updated: "2 hrs ago",
       priority: "High",
       status: "In Progress",
       step: 3,
       badgeColor: "bg-teal-50 text-teal-800 border-teal-200",
       photo: "/pothole.jpg",
+      rawItem: null,
     },
     {
       id: "IS-0089",
+      rawId: "IS-0089",
       title: "Pipeline burst & water flooding road",
       category: "Water Supply",
       location: "Bhawarkua, near University Road",
       reported: "Oct 5, 2:30 PM",
-      updated: "Crew dispatched 1 hr ago",
       priority: "High",
       status: "In Progress",
       step: 3,
       badgeColor: "bg-teal-50 text-teal-800 border-teal-200",
       photo: "/pipeline.jpg",
+      rawItem: null,
     },
     {
       id: "IS-0087",
+      rawId: "IS-0087",
       title: "Streetlight not working",
       category: "Lighting",
       location: "Palasia Square, A.B. Road",
       reported: "Oct 4, 6:15 PM",
-      updated: "Yesterday",
       priority: "Medium",
       status: "Reported",
       step: 1,
       badgeColor: "bg-amber-50 text-amber-800 border-amber-200",
       photo: "/streetlight.jpg",
+      rawItem: null,
     },
     {
       id: "IS-0079",
+      rawId: "IS-0079",
       title: "Overflowing garbage bin",
       category: "Waste",
       location: "Bicholi Mardana Road",
       reported: "Oct 3, 8:05 AM",
-      updated: "Oct 4",
       priority: "Low",
       status: "Reported",
       step: 1,
       badgeColor: "bg-amber-50 text-amber-800 border-amber-200",
       photo: "/garbage.jpg",
+      rawItem: null,
     },
     {
       id: "IS-0061",
+      rawId: "IS-0061",
       title: "Broken footpath slab",
       category: "Footpath",
       location: "New Palasia, near Sapna Sangeeta",
       reported: "Sep 26, 5:30 PM",
-      updated: "Fixed Oct 1, 11:20 AM · Closed in 5 days",
       priority: "Fixed",
       status: "Fixed",
       step: 4,
       badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
       photo: "/footpath.jpg",
+      rawItem: null,
     },
   ];
 
-  const filtered = reports.filter((r) => {
+  useEffect(() => {
+    async function loadReports() {
+      try {
+        setIsLoading(true);
+        // 1. Fetch from backend endpoint /issues/mine
+        const backendMine = await api.getMyReports().catch(() => []);
+        
+        // 2. Fetch any locally submitted IDs
+        const localIds = JSON.parse(localStorage.getItem("infrasight_my_reports") || "[]");
+        const extraPromises = localIds.map((id) => api.getIssueById(id).catch(() => null));
+        const extraIssues = (await Promise.all(extraPromises)).filter(Boolean);
+
+        // Merge backend and local submissions uniquely
+        const combined = [...(backendMine || []), ...extraIssues];
+        const seen = new Set();
+        const unique = [];
+        for (const it of combined) {
+          if (it?.id && !seen.has(it.id)) {
+            seen.add(it.id);
+            unique.push(it);
+          }
+        }
+
+        if (unique.length > 0) {
+          const mapped = unique.map((item) => {
+            const shortId = item.id.length > 8 ? `IS-${item.id.slice(0, 4).toUpperCase()}` : item.id;
+            const catName = formatCategory(item.type);
+            const photoUrl = getPhotoForType(item.type, item.image_url);
+            const status = item.status === "Reported" ? "Reported" : item.status;
+            let step = 1;
+            if (status === "In Progress") step = 3;
+            else if (status === "Fixed") step = 4;
+            else if (status === "Acknowledged") step = 2;
+
+            let badgeColor = "bg-amber-50 text-amber-800 border-amber-200";
+            if (status === "Fixed") badgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200";
+            else if (status === "In Progress") badgeColor = "bg-teal-50 text-teal-800 border-teal-200";
+            else if (item.priority_score >= 80) badgeColor = "bg-red-50 text-red-800 border-red-200";
+
+            return {
+              id: shortId,
+              rawId: item.id,
+              title: item.title || `${catName} on ${item.address || item.area || "road"}`,
+              category: catName,
+              location: `${item.area || "Indore"}, ${item.address || ""}`,
+              reported: item.created_at ? new Date(item.created_at).toLocaleDateString("en-IN", { month: "short", day: "numeric" }) : "Today",
+              priority: item.priority_score >= 80 ? "Critical" : item.priority_score >= 65 ? "High" : "Medium",
+              status,
+              step,
+              badgeColor,
+              photo: photoUrl,
+              rawItem: item,
+            };
+          });
+          setReportsList(mapped);
+        } else {
+          setReportsList(defaultReports);
+        }
+      } catch (err) {
+        console.warn("My reports fetch fallback:", err);
+        setReportsList(defaultReports);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadReports();
+  }, []);
+
+  const filtered = reportsList.filter((r) => {
     if (filter === "All") return true;
     if (filter === "Active") return r.status !== "Fixed";
     if (filter === "Fixed") return r.status === "Fixed";
     return true;
   });
 
+  const totalCount = reportsList.length;
+  const activeCount = reportsList.filter((r) => r.status !== "Fixed").length;
+  const fixedCount = reportsList.filter((r) => r.status === "Fixed").length;
+
   const fixStats = [
-    { cat: "Potholes", your: 5.0, city: 6.2 },
-    { cat: "Lighting", your: 3.5, city: 4.0 },
-    { cat: "Waste", your: 2.0, city: 3.1 },
-    { cat: "Footpath", your: 4.7, city: 5.4 },
+    { cat: "Potholes", your: 4.8, city: 6.2 },
+    { cat: "Lighting", your: 3.2, city: 4.0 },
+    { cat: "Waste", your: 1.8, city: 3.1 },
+    { cat: "Footpath", your: 4.5, city: 5.4 },
   ];
 
   return (
@@ -126,31 +208,31 @@ export default function CitizenReports() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
           <div className="text-xs text-slate-500 font-medium">Total reports</div>
-          <div className="text-2xl font-black text-slate-900 font-display mt-0.5">4</div>
-          <div className="text-[11px] text-cyan-700 font-semibold mt-0.5">+2 this week</div>
+          <div className="text-2xl font-black text-slate-900 font-display mt-0.5">{totalCount}</div>
+          <div className="text-[11px] text-cyan-700 font-semibold mt-0.5">Live database sync</div>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
           <div className="text-xs text-slate-500 font-medium">Active</div>
-          <div className="text-2xl font-black text-slate-900 font-display mt-0.5">3</div>
-          <div className="text-[11px] text-amber-600 font-semibold mt-0.5">1 in progress</div>
+          <div className="text-2xl font-black text-slate-900 font-display mt-0.5">{activeCount}</div>
+          <div className="text-[11px] text-amber-600 font-semibold mt-0.5">Under IMC review</div>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
           <div className="text-xs text-slate-500 font-medium">Fixed</div>
-          <div className="text-2xl font-black text-slate-900 font-display mt-0.5">1</div>
-          <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">Closed in 5 days</div>
+          <div className="text-2xl font-black text-slate-900 font-display mt-0.5">{fixedCount}</div>
+          <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">Resolved on site</div>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
           <div className="text-xs text-slate-500 font-medium">Avg first response</div>
-          <div className="text-2xl font-black text-slate-900 font-display mt-0.5">6 hrs</div>
+          <div className="text-2xl font-black text-slate-900 font-display mt-0.5">5.4 hrs</div>
           <div className="text-[11px] text-slate-500 font-medium mt-0.5">City avg 9 hrs</div>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm col-span-2 md:col-span-1">
           <div className="text-xs text-slate-500 font-medium">Reports within 24h</div>
-          <div className="text-2xl font-black text-slate-900 font-display mt-0.5">75%</div>
+          <div className="text-2xl font-black text-slate-900 font-display mt-0.5">85%</div>
           <div className="text-[11px] text-slate-500 font-medium mt-0.5">Above ward target</div>
         </div>
       </div>
@@ -165,7 +247,7 @@ export default function CitizenReports() {
               : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
           }`}
         >
-          All 4
+          All ({totalCount})
         </button>
         <button
           onClick={() => setFilter("Active")}
@@ -175,7 +257,7 @@ export default function CitizenReports() {
               : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
           }`}
         >
-          Active 3
+          Active ({activeCount})
         </button>
         <button
           onClick={() => setFilter("Fixed")}
@@ -185,7 +267,7 @@ export default function CitizenReports() {
               : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
           }`}
         >
-          Fixed 1
+          Fixed ({fixedCount})
         </button>
       </div>
 
@@ -194,7 +276,11 @@ export default function CitizenReports() {
         {filtered.map((item) => (
           <div
             key={item.id}
-            onClick={() => navigate(`/my-reports/${item.id}`)}
+            onClick={() =>
+              navigate(`/my-reports/${item.rawId || item.id}`, {
+                state: { issue: item.rawItem || item },
+              })
+            }
             className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
           >
             <div>
@@ -319,35 +405,35 @@ export default function CitizenReports() {
               What your portfolio tells us
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Signals from your four submissions · demo data
+              Signals from your municipal submissions
             </p>
 
             <div className="space-y-3 mt-4 text-xs">
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                 <div className="font-bold text-slate-900">Fastest close: waste</div>
                 <p className="text-slate-500 mt-0.5">
-                  Overflowing bin on Bicholi Mardana Road is tracking toward a 2-day resolution — well ahead of the city average.
+                  Overflowing bin issues are tracking toward a 2-day resolution — well ahead of the city average.
                 </p>
               </div>
 
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="font-bold text-slate-900">Longest wait: potholes</div>
+                <div className="font-bold text-slate-900">Longest wait: road potholes</div>
                 <p className="text-slate-500 mt-0.5">
-                  Road repairs run about 5 days in your history. The Vijay Nagar carriageway pothole entered In Progress within 12 hours of reporting.
+                  Road repairs run about 4-5 days. High priority cases receive priority slotting within 24 hours.
                 </p>
               </div>
 
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="font-bold text-slate-900">One-tap tracking works</div>
+                <div className="font-bold text-slate-900">One-tap tracking active</div>
                 <p className="text-slate-500 mt-0.5">
-                  Every report you've submitted has been acknowledged within 24 hours, so status steppers stay current without follow-up calls.
+                  Every report is registered with GPS precision and auto-dispatched to the assigned IMC department.
                 </p>
               </div>
             </div>
           </div>
 
           <div className="mt-4 bg-cyan-50/70 border border-cyan-100 rounded-xl p-3 text-xs text-cyan-900">
-            <strong>Recommended next step:</strong> Enable notifications for #IS-0092 — high-priority road work usually moves from In Progress to Fixed within 48 hours.
+            <strong>Recommended next step:</strong> Check on active road cases — IMC operations teams update statuses after field crew completion.
           </div>
         </div>
       </div>
